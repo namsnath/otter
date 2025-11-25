@@ -7,4 +7,4 @@ require (
 	github.com/nivohavi/go-cypher-dsl v0.1.2
 )
 
-replace github.com/namsnath/gatekeeper => ../gatekeeper
+replace github.com/namsnath/gatekeeper => ./src/go
