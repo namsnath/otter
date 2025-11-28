@@ -1,7 +1,7 @@
 package policy
 
 import (
-	"github.com/namsnath/gatekeeper/db"
+	"github.com/namsnath/otter/db"
 )
 
 func (policy Policy) Create() {

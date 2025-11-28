@@ -1,5 +1,10 @@
 package specifier
 
+type Spec interface {
+	getSpecifierKey() string
+	getSpecifierValue() string
+}
+
 type Specifier struct {
 	Identifier string
 	Value      string

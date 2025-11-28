@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/namsnath/gatekeeper/action"
-	"github.com/namsnath/gatekeeper/db"
-	"github.com/namsnath/gatekeeper/query"
-	"github.com/namsnath/gatekeeper/resource"
-	"github.com/namsnath/gatekeeper/specifier"
-	"github.com/namsnath/gatekeeper/subject"
+	"github.com/namsnath/otter/action"
+	"github.com/namsnath/otter/db"
+	"github.com/namsnath/otter/query"
+	"github.com/namsnath/otter/resource"
+	"github.com/namsnath/otter/specifier"
+	"github.com/namsnath/otter/subject"
 )
 
 func main() {

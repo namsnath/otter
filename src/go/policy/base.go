@@ -1,10 +1,10 @@
 package policy
 
 import (
-	"github.com/namsnath/gatekeeper/action"
-	"github.com/namsnath/gatekeeper/resource"
-	"github.com/namsnath/gatekeeper/specifier"
-	"github.com/namsnath/gatekeeper/subject"
+	"github.com/namsnath/otter/action"
+	"github.com/namsnath/otter/resource"
+	"github.com/namsnath/otter/specifier"
+	"github.com/namsnath/otter/subject"
 )
 
 type Policy struct {

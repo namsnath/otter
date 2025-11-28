@@ -1,6 +1,6 @@
 package subject
 
-import "github.com/namsnath/gatekeeper/db"
+import "github.com/namsnath/otter/db"
 
 func (subject Subject) Create() Subject {
 	db.ExecuteQuery(`

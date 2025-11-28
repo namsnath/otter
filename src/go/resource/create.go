@@ -1,6 +1,6 @@
 package resource
 
-import "github.com/namsnath/gatekeeper/db"
+import "github.com/namsnath/otter/db"
 
 func (resource Resource) Create() Resource {
 	db.ExecuteQuery(`
