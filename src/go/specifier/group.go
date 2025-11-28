@@ -3,7 +3,7 @@ package specifier
 import "log/slog"
 
 type SpecifierGroup struct {
-	Specifiers []*Specifier
+	Specifiers []Specifier
 }
 
 func (sg *SpecifierGroup) AsMap() map[string]string {
@@ -13,14 +13,14 @@ func (sg *SpecifierGroup) AsMap() map[string]string {
 	}
 
 	for _, specifier := range sg.Specifiers {
-		if existingValue, ok := specifierMap[specifier.Identifier]; ok {
+		if existingValue, ok := specifierMap[specifier.Key]; ok {
 			slog.Warn("Specifier Key being overwritten",
-				"identifier", specifier.Identifier,
+				"identifier", specifier.Key,
 				"existingValue", existingValue,
 				"newValue", specifier.Value,
 			)
 		}
-		specifierMap[specifier.Identifier] = specifier.Value
+		specifierMap[specifier.Key] = specifier.Value
 	}
 	return specifierMap
 }

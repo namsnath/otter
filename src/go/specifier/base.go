@@ -6,13 +6,13 @@ type Spec interface {
 }
 
 type Specifier struct {
-	Identifier string
-	Value      string
+	Key   string
+	Value string
 }
 
-func NewSpecifier(identifier string, value string) *Specifier {
-	return &Specifier{
-		Identifier: identifier,
-		Value:      value,
+func NewSpecifier(key string, value string) Specifier {
+	return Specifier{
+		Key:   key,
+		Value: value,
 	}
 }

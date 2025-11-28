@@ -1,6 +1,9 @@
 package main
 
 import (
+	"reflect"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/namsnath/otter/action"
@@ -10,7 +13,7 @@ import (
 	"github.com/namsnath/otter/subject"
 )
 
-func TestCanQueries(t *testing.T) {
+func TestWhatCanQueries(t *testing.T) {
 	query.DeleteEverything()
 	query.SetupTestState()
 
@@ -22,6 +25,8 @@ func TestCanQueries(t *testing.T) {
 
 	r1 := resource.Resource{Name: "Resource1"}
 	r2 := resource.Resource{Name: "Resource2"}
+	r3 := resource.Resource{Name: "Resource3"}
+	r4 := resource.Resource{Name: "Resource4"}
 	rRoot := resource.Resource{Name: "_"}
 
 	adminRole := specifier.NewSpecifier("Role", "admin")
@@ -33,28 +38,32 @@ func TestCanQueries(t *testing.T) {
 		action     action.Action
 		resource   resource.Resource
 		specifiers specifier.SpecifierGroup
-		expected   bool
+		expected   []resource.Resource
 	}{
-		{"direct: p1 READ r1", p1, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
-		{"direct: p1 READ rRoot", p1, action.ActionRead, rRoot, specifier.SpecifierGroup{}, false},
-		{"indirect: p1 READ r2", p1, action.ActionRead, r2, specifier.SpecifierGroup{}, true},
-		{"direct: p2 READ r1", p2, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
-		{"direct: g2 READ r2", g2, action.ActionRead, r2, specifier.SpecifierGroup{}, true},
-		{"direct: g2 READ r2 as admin", g2, action.ActionRead, r2, specifierGroup, true},
-		{"indirect: p2 READ r2", p2, action.ActionRead, r2, specifier.SpecifierGroup{}, true},
-		{"direct: p3 READ rRoot", p3, action.ActionRead, rRoot, specifier.SpecifierGroup{}, false},
-		{"direct: p3 READ rRoot as admin", p3, action.ActionRead, rRoot, specifierGroup, true},
-		{"indirect: p3 READ r1 as admin", p3, action.ActionRead, r1, specifierGroup, true},
+		{"p1 READ", p1, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{r1, r2}},
+		{"g2 READ", g2, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{r2}},
+		{"p2 READ", p2, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{r1, r2}},
+		{"p3 READ", p3, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{}},
+		{"p3 READ as admin", p3, action.ActionRead, resource.Resource{}, specifierGroup, []resource.Resource{rRoot, r1, r2, r3, r4}},
+		{"p3 READ as admin UNDER r3", p3, action.ActionRead, r3, specifierGroup, []resource.Resource{r3, r4}},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := query.Can(tc.subject).Perform(tc.action).On(tc.resource).With(tc.specifiers).Query()
+			result, err := query.WhatCan(tc.subject).Perform(tc.action).Under(tc.resource).With(tc.specifiers).Query()
 			if err != nil {
 				t.Errorf("Unexpected error for %s: %v", tc.name, err)
 				return
 			}
-			if result != tc.expected {
+
+			slices.SortFunc(result, func(a, b resource.Resource) int {
+				return strings.Compare(a.Name, b.Name)
+			})
+			slices.SortFunc(tc.expected, func(a, b resource.Resource) int {
+				return strings.Compare(a.Name, b.Name)
+			})
+
+			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("For %s, expected %v, but got %v", tc.name, tc.expected, result)
 			}
 		})

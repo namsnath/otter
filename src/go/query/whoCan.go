@@ -45,7 +45,7 @@ func (qb *WhoCanQueryBuilder) Validate() (*WhoCanQueryBuilder, error) {
 	return qb, nil
 }
 
-func (qb *WhoCanQueryBuilder) Execute() ([]subject.Subject, error) {
+func (qb *WhoCanQueryBuilder) Query() ([]subject.Subject, error) {
 	qb, ok := qb.Validate()
 	if ok != nil {
 		return []subject.Subject{}, ok

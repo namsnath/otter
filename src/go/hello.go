@@ -25,17 +25,17 @@ func main() {
 	rRoot := resource.Resource{Name: "_"}
 
 	adminRole := specifier.NewSpecifier("Role", "admin")
-	specifierGroup := specifier.SpecifierGroup{Specifiers: []*specifier.Specifier{adminRole}}
+	specifierGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}
 
-	query.WhoCan(action.ActionRead).On(r1).Execute()
-	query.WhoCan(action.ActionRead).On(r2).Execute()
-	query.WhoCan(action.ActionRead).On(rRoot).Execute()
-	query.WhoCan(action.ActionRead).On(rRoot).With(specifierGroup).Execute()
+	query.WhoCan(action.ActionRead).On(r1).Query()
+	query.WhoCan(action.ActionRead).On(r2).Query()
+	query.WhoCan(action.ActionRead).On(rRoot).Query()
+	query.WhoCan(action.ActionRead).On(rRoot).With(specifierGroup).Query()
 
-	query.WhatCan(p1).Perform(action.ActionRead).Execute()
-	query.WhatCan(g2).Perform(action.ActionRead).Execute()
-	query.WhatCan(p2).Perform(action.ActionRead).Execute()
-	query.WhatCan(p3).Perform(action.ActionRead).Execute()
+	query.WhatCan(p1).Perform(action.ActionRead).Query()
+	query.WhatCan(g2).Perform(action.ActionRead).Query()
+	query.WhatCan(p2).Perform(action.ActionRead).Query()
+	query.WhatCan(p3).Perform(action.ActionRead).Query()
 
 	instance.Close()
 }

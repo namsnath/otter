@@ -9,6 +9,7 @@ import (
 	"github.com/namsnath/otter/resource"
 	"github.com/namsnath/otter/specifier"
 	"github.com/namsnath/otter/subject"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 // CanQueryBuilder holds the state of the query as it is being built.
@@ -59,29 +60,55 @@ func (qb *CanQueryBuilder) Query() (bool, error) {
 	}
 
 	// TODO: Improve the specifiers conditional to check for supersets of the defined specifiers
+	// TODO: Can we unwind the specifiers in the query itself instead of looping here?
 	query := `
-		MATCH (s:Subject {name: $subject})
-		MATCH (r:Resource {name: $resource})
+		MATCH (subject:Subject {name: $subject})
+		MATCH (resource:Resource {name: $resource})
+		MATCH (subject)-[:CHILD_OF*0..]->(:Subject)-[:HAS_POLICY]->(policy:Policy)<-[:HAS_POLICY]-(:Resource)<-[:CHILD_OF*0..]-(resource)
 		RETURN EXISTS {
-			(s)-[:CHILD_OF*0..]->(:Subject)-[rel:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r)
-			WHERE properties(rel) = $edgeProps
+			(policy)-[rel:$($action)]->(:Specifier)<-[:CHILD_OF*0..]-(specifier:Specifier {key: $specifierKey, value: $specifierValue})
 		} as CanDo
 	`
 	params := map[string]any{
-		"subject":   qb.subject.Name,
-		"resource":  qb.resource.Name,
-		"action":    string(qb.action),
-		"edgeProps": qb.specifiers,
-	}
-	result := db.ExecuteQuery(query, params)
-
-	if len(result.Records) == 0 {
-		return false, nil
+		"subject":  qb.subject.Name,
+		"resource": qb.resource.Name,
+		"action":   string(qb.action),
 	}
 
-	canDo, hasVal := result.Records[0].Get("CanDo")
-	if !hasVal {
-		return false, nil
+	var canDoRaw interface{}
+	var canDo, hasVal bool
+	var queryResult *neo4j.EagerResult
+
+	if len(qb.specifiers) == 0 {
+		params["specifierKey"] = "*"
+		params["specifierValue"] = "*"
+		queryResult = db.ExecuteQuery(query, params)
+		if len(queryResult.Records) == 0 {
+			return false, nil
+		}
+
+		canDoRaw, hasVal = queryResult.Records[0].Get("CanDo")
+		if !hasVal {
+			return false, nil
+		}
+
+		canDo = canDoRaw.(bool)
+	} else {
+		canDo = true
+		for key, value := range qb.specifiers {
+			params["specifierKey"] = key
+			params["specifierValue"] = value
+			queryResult = db.ExecuteQuery(query, params)
+			if len(queryResult.Records) == 0 {
+				return false, nil
+			}
+
+			canDoRaw, hasVal = queryResult.Records[0].Get("CanDo")
+			if !hasVal || !canDoRaw.(bool) {
+				canDo = false
+				break
+			}
+		}
 	}
 
 	slog.Info("Can",
@@ -90,7 +117,8 @@ func (qb *CanQueryBuilder) Query() (bool, error) {
 		"resource", qb.resource,
 		"specifiers", qb.specifiers,
 		"canDo", canDo,
-		"duration", result.Summary.ResultAvailableAfter())
+		// "duration", result.Summary.ResultAvailableAfter(),
+	)
 
-	return canDo.(bool), nil
+	return canDo, nil
 }

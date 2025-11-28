@@ -12,6 +12,6 @@ type Deleter[T any] interface {
 	Delete(T) T
 }
 
-type CreatorAsChildOf[T any] interface {
+type ChildCreator[T any] interface {
 	CreateAsChildOf(T) T
 }

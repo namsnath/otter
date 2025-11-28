@@ -33,6 +33,13 @@ func SetupTestState() {
 	rRoot := resource.Resource{Name: "_"}.Create()
 	r1 := resource.Resource{Name: "Resource1"}.CreateAsChildOf(rRoot)
 	r2 := resource.Resource{Name: "Resource2"}.CreateAsChildOf(rRoot)
+	r3 := resource.Resource{Name: "Resource3"}.CreateAsChildOf(rRoot)
+	resource.Resource{Name: "Resource4"}.CreateAsChildOf(r3)
+
+	rootSpecifier := specifier.NewSpecifier("*", "*").Create()
+	roleRoot, _ := specifier.NewSpecifier("Role", "*").CreateAsChildOf(rootSpecifier)
+	roleAdmin, _ := specifier.NewSpecifier("Role", "admin").CreateAsChildOf(roleRoot)
+	specifier.NewSpecifier("Role", "user").CreateAsChildOf(roleAdmin)
 
 	policy.Policy{
 		Subject:    g1,
@@ -56,6 +63,6 @@ func SetupTestState() {
 		Subject:    p3,
 		Resource:   rRoot,
 		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{Specifiers: []*specifier.Specifier{specifier.NewSpecifier("Role", "admin")}},
+		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin}},
 	}.Create()
 }
