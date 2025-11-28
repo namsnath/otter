@@ -40,6 +40,9 @@ func SetupTestState() {
 	roleRoot, _ := specifier.NewSpecifier("Role", "*").CreateAsChildOf(rootSpecifier)
 	roleAdmin, _ := specifier.NewSpecifier("Role", "admin").CreateAsChildOf(roleRoot)
 	specifier.NewSpecifier("Role", "user").CreateAsChildOf(roleAdmin)
+	envRoot, _ := specifier.NewSpecifier("Env", "*").CreateAsChildOf(rootSpecifier)
+	specifier.NewSpecifier("Env", "prod").CreateAsChildOf(envRoot)
+	specifier.NewSpecifier("Env", "dev").CreateAsChildOf(envRoot)
 
 	policy.Policy{
 		Subject:    g1,
