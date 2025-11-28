@@ -10,16 +10,21 @@ import (
 	"github.com/namsnath/gatekeeper/subject"
 )
 
-func AllSubjectsThatCanDo(resource *resource.Resource, action action.Action, specifier *specifier.Specifier) []subject.Subject {
-	// Subject s is a child of any Subject that can READ a Resource that is a parent of any Resouce r,
-	// where r is the input Resource
+func AllSubjectsThatCanDo(resource *resource.Resource, action action.Action, specifiers *specifier.SpecifierGroup) []subject.Subject {
+	edgeProps := map[string]string{}
+	if specifiers != nil {
+		edgeProps = specifiers.AsMap()
+	}
+
 	result := db.ExecuteQuery(`
-		MATCH (s:Subject)-[:CHILD_OF*0..]->(:Subject)-[:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r:Resource {name: $resourceName})
+		MATCH (s:Subject)-[:CHILD_OF*0..]->(:Subject)-[rel:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r:Resource {name: $resourceName})
+		WHERE properties(rel) = $edgeProps
 		RETURN DISTINCT s.name AS subject, s.type AS subjectType
 		`,
 		map[string]any{
 			"resourceName": resource.Name,
 			"action":       string(action),
+			"edgeProps":    edgeProps,
 		},
 	)
 
@@ -38,6 +43,7 @@ func AllSubjectsThatCanDo(resource *resource.Resource, action action.Action, spe
 	slog.Info("AllSubjectsThatCanDo",
 		"resource", resource,
 		"subjects", subjects,
+		"specifiers", edgeProps,
 		"duration", result.Summary.ResultAvailableAfter())
 
 	return subjects

@@ -10,15 +10,21 @@ import (
 	"github.com/namsnath/gatekeeper/subject"
 )
 
-func AllResourcesThatSubjectCanDo(subject *subject.Subject, action action.Action, specifier *specifier.Specifier) []resource.Resource {
-	// Subject s is a child of any Subject that can ACTION a Resource that is a parent of any Resouce r
+func AllResourcesThatSubjectCanDo(subject *subject.Subject, action action.Action, specifiers *specifier.SpecifierGroup) []resource.Resource {
+	edgeProps := map[string]string{}
+	if specifiers != nil {
+		edgeProps = specifiers.AsMap()
+	}
+
 	result := db.ExecuteQuery(`
-		MATCH (s:Subject {name: $subjectName})-[:CHILD_OF*0..]->(:Subject)-[:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r:Resource)
+		MATCH (s:Subject {name: $subjectName})-[:CHILD_OF*0..]->(:Subject)-[rel:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r:Resource)
+		WHERE properties(rel) = $edgeProps
 		RETURN DISTINCT r.name AS resource
 		`,
 		map[string]any{
 			"subjectName": subject.Name,
 			"action":      string(action),
+			"edgeProps":   edgeProps,
 		},
 	)
 
@@ -36,6 +42,7 @@ func AllResourcesThatSubjectCanDo(subject *subject.Subject, action action.Action
 	slog.Info("AllResourcesThatSubjectCanDo",
 		"subject", subject,
 		"resources", resources,
+		"specifiers", edgeProps,
 		"duration", result.Summary.ResultAvailableAfter())
 
 	return resources

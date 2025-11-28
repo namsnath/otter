@@ -5,7 +5,7 @@ type Specifier struct {
 	Value      string
 }
 
-func NewSpecifier(identifier, value string) *Specifier {
+func NewSpecifier(identifier string, value string) *Specifier {
 	return &Specifier{
 		Identifier: identifier,
 		Value:      value,

@@ -10,16 +10,25 @@ import (
 	"github.com/namsnath/gatekeeper/subject"
 )
 
-func SubjectCanDo(subject *subject.Subject, action action.Action, resource *resource.Resource, specifier *specifier.Specifier) bool {
+func SubjectCanDo(subject *subject.Subject, action action.Action, resource *resource.Resource, specifiers *specifier.SpecifierGroup) bool {
+	edgeProps := map[string]string{}
+	if specifiers != nil {
+		edgeProps = specifiers.AsMap()
+	}
+
 	result := db.ExecuteQuery(`
 		MATCH (s:Subject {name: $subject})
 		MATCH (r:Resource {name: $resource})
-		RETURN EXISTS { (s)-[:CHILD_OF*0..]->(:Subject)-[rel:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r) } as CanDo
+		RETURN EXISTS {
+			(s)-[:CHILD_OF*0..]->(:Subject)-[rel:$($action)]->(:Resource)<-[:CHILD_OF*0..]-(r)
+			WHERE properties(rel) = $edgeProps
+		} as CanDo
 		`,
 		map[string]any{
-			"subject":  subject.Name,
-			"resource": resource.Name,
-			"action":   string(action),
+			"subject":   subject.Name,
+			"resource":  resource.Name,
+			"action":    string(action),
+			"edgeProps": edgeProps,
 		},
 	)
 
@@ -33,7 +42,10 @@ func SubjectCanDo(subject *subject.Subject, action action.Action, resource *reso
 	}
 
 	slog.Info("SubjectCanDo",
+		"subject", subject,
+		"action", action,
 		"resource", resource,
+		"specifiers", edgeProps,
 		"canDo", val,
 		"duration", result.Summary.ResultAvailableAfter())
 

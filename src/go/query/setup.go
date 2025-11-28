@@ -38,24 +38,24 @@ func SetupTestState() {
 		Subject:    g1,
 		Resource:   r1,
 		Action:     action.ActionRead,
-		Specifiers: map[string]specifier.Specifier{},
+		Specifiers: specifier.SpecifierGroup{},
 	}.Create()
 	policy.Policy{
 		Subject:    g2,
 		Resource:   r2,
 		Action:     action.ActionRead,
-		Specifiers: map[string]specifier.Specifier{},
+		Specifiers: specifier.SpecifierGroup{},
 	}.Create()
 	policy.Policy{
 		Subject:    p2,
 		Resource:   r1,
 		Action:     action.ActionRead,
-		Specifiers: map[string]specifier.Specifier{},
+		Specifiers: specifier.SpecifierGroup{},
 	}.Create()
 	policy.Policy{
 		Subject:    p3,
 		Resource:   rRoot,
 		Action:     action.ActionRead,
-		Specifiers: map[string]specifier.Specifier{},
+		Specifiers: specifier.SpecifierGroup{Specifiers: []*specifier.Specifier{specifier.NewSpecifier("Role", "admin")}},
 	}.Create()
 }

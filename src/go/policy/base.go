@@ -11,5 +11,5 @@ type Policy struct {
 	Subject    subject.Subject
 	Resource   resource.Resource
 	Action     action.Action
-	Specifiers map[string]specifier.Specifier
+	Specifiers specifier.SpecifierGroup
 }
