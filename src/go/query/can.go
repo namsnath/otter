@@ -9,7 +9,6 @@ import (
 	"github.com/namsnath/otter/resource"
 	"github.com/namsnath/otter/specifier"
 	"github.com/namsnath/otter/subject"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 // CanQueryBuilder holds the state of the query as it is being built.
@@ -59,57 +58,55 @@ func (qb *CanQueryBuilder) Query() (bool, error) {
 		return false, ok
 	}
 
-	// TODO: Improve the specifiers conditional to check for supersets of the defined specifiers
-	// TODO: Can we unwind the specifiers in the query itself instead of looping here?
 	query := `
-		MATCH (subject:Subject {name: $subject})
-		MATCH (resource:Resource {name: $resource})
-		MATCH (subject)-[:CHILD_OF*0..]->(:Subject)-[:HAS_POLICY]->(policy:Policy)<-[:HAS_POLICY]-(:Resource)<-[:CHILD_OF*0..]-(resource)
-		RETURN EXISTS {
-			(policy)-[rel:$($action)]->(:Specifier)<-[:CHILD_OF*0..]-(specifier:Specifier {key: $specifierKey, value: $specifierValue})
-		} as CanDo
+		MATCH (specifier:Specifier)
+		WHERE specifier.key <> "*"
+		WITH DISTINCT specifier.key as AllKeys
+		UNWIND AllKeys AS k
+		WITH apoc.map.mergeList(collect(apoc.map.setKey({}, k, "*"))) AS AllSpecMap
+		WITH apoc.map.merge(AllSpecMap, $specifiers) AS NormalizedSpecifiers
+
+		UNWIND keys(NormalizedSpecifiers) AS k
+		WITH NormalizedSpecifiers, k, NormalizedSpecifiers[k] AS v
+
+		MATCH (s:Specifier)
+		WHERE s.key = k AND s.value = v
+
+		MATCH (p:Policy)-[:$($action)]->(ps:Specifier)<-[:CHILD_OF*0..]-(s)
+
+		MATCH (subject:Subject {name: $subject})-[:CHILD_OF*0..]->(parents:Subject)-[:HAS_POLICY]->(p)
+		MATCH (resource:Resource {name: $resource})-[:CHILD_OF*0..]->(:Resource)-[:HAS_POLICY]->(p)
+
+
+		// Aggregate by Policy and count how many *distinct* keys were matched
+		WITH p, count(DISTINCT s.key) AS matches, size(keys(NormalizedSpecifiers)) AS requiredMatches, NormalizedSpecifiers
+
+		// The Policy is valid only if it matched EVERY key in the input
+		WHERE matches = requiredMatches
+
+		RETURN p IS NOT NULL AS CanDo
 	`
+
 	params := map[string]any{
-		"subject":  qb.subject.Name,
-		"resource": qb.resource.Name,
-		"action":   string(qb.action),
+		"subject":    qb.subject.Name,
+		"resource":   qb.resource.Name,
+		"action":     string(qb.action),
+		"specifiers": qb.specifiers,
 	}
 
 	var canDoRaw interface{}
-	var canDo, hasVal bool
-	var queryResult *neo4j.EagerResult
 
-	if len(qb.specifiers) == 0 {
-		params["specifierKey"] = "*"
-		params["specifierValue"] = "*"
-		queryResult = db.ExecuteQuery(query, params)
-		if len(queryResult.Records) == 0 {
-			return false, nil
-		}
-
-		canDoRaw, hasVal = queryResult.Records[0].Get("CanDo")
-		if !hasVal {
-			return false, nil
-		}
-
-		canDo = canDoRaw.(bool)
-	} else {
-		canDo = true
-		for key, value := range qb.specifiers {
-			params["specifierKey"] = key
-			params["specifierValue"] = value
-			queryResult = db.ExecuteQuery(query, params)
-			if len(queryResult.Records) == 0 {
-				return false, nil
-			}
-
-			canDoRaw, hasVal = queryResult.Records[0].Get("CanDo")
-			if !hasVal || !canDoRaw.(bool) {
-				canDo = false
-				break
-			}
-		}
+	queryResult := db.ExecuteQuery(query, params)
+	if len(queryResult.Records) == 0 {
+		return false, nil
 	}
+
+	canDoRaw, hasVal := queryResult.Records[0].Get("CanDo")
+	if !hasVal {
+		return false, nil
+	}
+
+	canDo := canDoRaw.(bool)
 
 	slog.Info("Can",
 		"subject", qb.subject,
@@ -117,7 +114,7 @@ func (qb *CanQueryBuilder) Query() (bool, error) {
 		"resource", qb.resource,
 		"specifiers", qb.specifiers,
 		"canDo", canDo,
-		// "duration", result.Summary.ResultAvailableAfter(),
+		"duration", queryResult.Summary.ResultAvailableAfter(),
 	)
 
 	return canDo, nil

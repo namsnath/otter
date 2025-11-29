@@ -27,6 +27,8 @@ func TestCanQueries(t *testing.T) {
 
 	adminRole := specifier.NewSpecifier("Role", "admin")
 	envProd := specifier.NewSpecifier("Env", "prod")
+	userRole := specifier.NewSpecifier("Role", "user")
+	// envDev := specifier.NewSpecifier("Env", "dev")
 	specifierGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}
 
 	testCases := []struct {
@@ -41,9 +43,10 @@ func TestCanQueries(t *testing.T) {
 		{"direct: p1 READ r3", p1, action.ActionRead, r3, specifier.SpecifierGroup{}, false},
 		{"direct: p1 READ r1 in prod", p1, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, true},
 		{"direct: p2 READ r3", p2, action.ActionRead, r3, specifier.SpecifierGroup{}, false},
-		{"direct: p2 READ r1 in prod", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, false},
-		{"direct: p2 READ r1 as admin", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}, false},
-		{"direct: p2 READ r1 in prod as admin", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole, envProd}}, true},
+		{"direct: p2 READ r3 in prod", p2, action.ActionRead, r3, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, false},
+		{"direct: p2 READ r3 as admin", p2, action.ActionRead, r3, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}, false},
+		{"direct: p2 READ r3 in prod as admin", p2, action.ActionRead, r3, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole, envProd}}, true},
+		{"direct: p2 READ r3 in prod as user", p2, action.ActionRead, r3, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{userRole, envProd}}, true},
 		{"direct: p1 READ rRoot", p1, action.ActionRead, rRoot, specifier.SpecifierGroup{}, false},
 		{"indirect: p1 READ r2", p1, action.ActionRead, r2, specifier.SpecifierGroup{}, true},
 		{"direct: p2 READ r1", p2, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
