@@ -26,7 +26,7 @@ func SetupTestState() {
 
 	g2 := subject.Subject{Name: "Group2", Type: subject.SubjectTypeGroup}.Create()
 	g1 := subject.Subject{Name: "Group1", Type: subject.SubjectTypeGroup}.CreateAsChildOf(g2)
-	subject.Subject{Name: "Principal1", Type: subject.SubjectTypePrincipal}.CreateAsChildOf(g1)
+	p1 := subject.Subject{Name: "Principal1", Type: subject.SubjectTypePrincipal}.CreateAsChildOf(g1)
 	p2 := subject.Subject{Name: "Principal2", Type: subject.SubjectTypePrincipal}.CreateAsChildOf(g2)
 	p3 := subject.Subject{Name: "Principal3", Type: subject.SubjectTypePrincipal}.Create()
 
@@ -41,7 +41,7 @@ func SetupTestState() {
 	roleAdmin, _ := specifier.NewSpecifier("Role", "admin").CreateAsChildOf(roleRoot)
 	specifier.NewSpecifier("Role", "user").CreateAsChildOf(roleAdmin)
 	envRoot, _ := specifier.NewSpecifier("Env", "*").CreateAsChildOf(rootSpecifier)
-	specifier.NewSpecifier("Env", "prod").CreateAsChildOf(envRoot)
+	envProd, _ := specifier.NewSpecifier("Env", "prod").CreateAsChildOf(envRoot)
 	specifier.NewSpecifier("Env", "dev").CreateAsChildOf(envRoot)
 
 	policy.Policy{
@@ -49,6 +49,18 @@ func SetupTestState() {
 		Resource:   r1,
 		Action:     action.ActionRead,
 		Specifiers: specifier.SpecifierGroup{},
+	}.Create()
+	policy.Policy{
+		Subject:    p1,
+		Resource:   r3,
+		Action:     action.ActionRead,
+		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}},
+	}.Create()
+	policy.Policy{
+		Subject:    p2,
+		Resource:   r3,
+		Action:     action.ActionRead,
+		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin, envProd}},
 	}.Create()
 	policy.Policy{
 		Subject:    g2,

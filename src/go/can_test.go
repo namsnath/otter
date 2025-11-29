@@ -22,9 +22,11 @@ func TestCanQueries(t *testing.T) {
 
 	r1 := resource.Resource{Name: "Resource1"}
 	r2 := resource.Resource{Name: "Resource2"}
+	r3 := resource.Resource{Name: "Resource3"}
 	rRoot := resource.Resource{Name: "_"}
 
 	adminRole := specifier.NewSpecifier("Role", "admin")
+	envProd := specifier.NewSpecifier("Env", "prod")
 	specifierGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}
 
 	testCases := []struct {
@@ -36,6 +38,12 @@ func TestCanQueries(t *testing.T) {
 		expected   bool
 	}{
 		{"direct: p1 READ r1", p1, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
+		{"direct: p1 READ r3", p1, action.ActionRead, r3, specifier.SpecifierGroup{}, false},
+		{"direct: p1 READ r1 in prod", p1, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, true},
+		{"direct: p2 READ r3", p2, action.ActionRead, r3, specifier.SpecifierGroup{}, false},
+		{"direct: p2 READ r1 in prod", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, false},
+		{"direct: p2 READ r1 as admin", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}, false},
+		{"direct: p2 READ r1 in prod as admin", p2, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole, envProd}}, true},
 		{"direct: p1 READ rRoot", p1, action.ActionRead, rRoot, specifier.SpecifierGroup{}, false},
 		{"indirect: p1 READ r2", p1, action.ActionRead, r2, specifier.SpecifierGroup{}, true},
 		{"direct: p2 READ r1", p2, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
