@@ -75,10 +75,6 @@ func (qb WhatCanQueryBuilder) Query() ([]resource.Resource, error) {
 		"specifiers": qb.specifiers,
 	}
 
-	if len(qb.specifiers) == 0 {
-		params["specifiers"] = map[string]string{"*": "*"}
-	}
-
 	result := db.ExecuteQuery(query, params)
 
 	resources := make([]resource.Resource, 0, len(result.Records))
