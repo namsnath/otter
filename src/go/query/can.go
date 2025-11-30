@@ -21,38 +21,38 @@ type CanQueryBuilder struct {
 }
 
 // `Can` initializes a new QueryBuilder and sets the Subject.
-func Can(s subject.Subject) *CanQueryBuilder {
-	return &CanQueryBuilder{
+func Can(s subject.Subject) CanQueryBuilder {
+	return CanQueryBuilder{
 		subject: s,
 	}
 }
 
 // Perform sets the Action on the QueryBuilder.
-func (qb *CanQueryBuilder) Perform(a action.Action) *CanQueryBuilder {
+func (qb CanQueryBuilder) Perform(a action.Action) CanQueryBuilder {
 	qb.action = a
 	return qb // Return the receiver struct
 }
 
 // On sets the Resource on the QueryBuilder.
-func (qb *CanQueryBuilder) On(r resource.Resource) *CanQueryBuilder {
+func (qb CanQueryBuilder) On(r resource.Resource) CanQueryBuilder {
 	qb.resource = r
 	return qb // Return the receiver struct
 }
 
 // With sets the SpecifierGroup on the QueryBuilder.
-func (qb *CanQueryBuilder) With(sg specifier.SpecifierGroup) *CanQueryBuilder {
+func (qb CanQueryBuilder) With(sg specifier.SpecifierGroup) CanQueryBuilder {
 	qb.specifiers = sg.AsMap()
 	return qb // Return the receiver struct
 }
 
-func (qb *CanQueryBuilder) Validate() (*CanQueryBuilder, error) {
+func (qb CanQueryBuilder) Validate() (CanQueryBuilder, error) {
 	if qb.subject == (subject.Subject{}) || qb.action == "" || qb.resource == (resource.Resource{}) {
-		return nil, fmt.Errorf("incomplete Can query: subject, action, and resource must be set")
+		return qb, fmt.Errorf("incomplete Can query: subject, action, and resource must be set")
 	}
 	return qb, nil
 }
 
-func (qb *CanQueryBuilder) Query() (bool, error) {
+func (qb CanQueryBuilder) Query() (bool, error) {
 	qb, ok := qb.Validate()
 	if ok != nil {
 		return false, ok
