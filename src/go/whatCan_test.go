@@ -30,7 +30,11 @@ func TestWhatCanQueries(t *testing.T) {
 	rRoot := resource.Resource{Name: "_"}
 
 	adminRole := specifier.NewSpecifier("Role", "admin")
-	specifierGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}
+	adminGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{adminRole}}
+	devRole := specifier.NewSpecifier("Role", "dev")
+	devGroup := specifier.SpecifierGroup{Specifiers: []specifier.Specifier{devRole}}
+	prodEnv := specifier.NewSpecifier("Env", "prod")
+	devEnv := specifier.NewSpecifier("Env", "dev")
 
 	testCases := []struct {
 		name       string
@@ -44,8 +48,12 @@ func TestWhatCanQueries(t *testing.T) {
 		{"g2 READ", g2, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{r2}},
 		{"p2 READ", p2, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{r1, r2}},
 		{"p3 READ", p3, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{}, []resource.Resource{}},
-		{"p3 READ as admin", p3, action.ActionRead, resource.Resource{}, specifierGroup, []resource.Resource{rRoot, r1, r2, r3, r4}},
-		{"p3 READ as admin UNDER r3", p3, action.ActionRead, r3, specifierGroup, []resource.Resource{r3, r4}},
+		{"p3 READ as dev", p3, action.ActionRead, resource.Resource{}, devGroup, []resource.Resource{}},
+		{"p3 READ in prod", p3, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{prodEnv}}, []resource.Resource{}},
+		{"p3 READ in prod as admin", p3, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{prodEnv, adminRole}}, []resource.Resource{rRoot, r1, r2, r3, r4}},
+		{"p3 READ in dev as admin", p3, action.ActionRead, resource.Resource{}, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{devEnv, adminRole}}, []resource.Resource{rRoot, r1, r2, r3, r4}},
+		{"p3 READ as admin", p3, action.ActionRead, resource.Resource{}, adminGroup, []resource.Resource{rRoot, r1, r2, r3, r4}},
+		{"p3 READ as admin UNDER r3", p3, action.ActionRead, r3, adminGroup, []resource.Resource{r3, r4}},
 	}
 
 	for _, tc := range testCases {

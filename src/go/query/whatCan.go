@@ -41,31 +41,33 @@ func (qb WhatCanQueryBuilder) Query() ([]resource.Resource, error) {
 		qb.underResource = resource.Resource{Name: "_"}
 	}
 
-	// TODO: Check if this honors all the specifiers specified in the policy
-	// Policy will say {Role: "admin", Env: "prod"}.
-	// If query is only {Role: "admin"}, should it return resources?
 	query := `
-		// Unwind specifiers to match each one
-		UNWIND keys($specifiers) AS k
+		MATCH (specifier:Specifier)
+		WHERE specifier.key <> "*"
+		WITH collect(DISTINCT specifier.key) AS allKeys
+		WITH reduce(specMap = $specifiers, k IN allKeys |
+			CASE WHEN NOT k IN keys(specMap) THEN apoc.map.setKey(specMap, k, "*") ELSE specMap END
+		) AS normalizedSpecifiers
 
-		MATCH (subject:Subject {name: $subject})
-		MATCH (specifier:Specifier {key: k, value: $specifiers[k]})
-		MATCH (parent:Resource {name: $parent})
+		UNWIND keys(normalizedSpecifiers) AS k
+		WITH normalizedSpecifiers, k, normalizedSpecifiers[k] AS v
 
-		// All policies applicable to the subject (directly or inherited)
-		MATCH (subject)-[:CHILD_OF*0..]->(:Subject)-[:HAS_POLICY]->(policy:Policy)
+		MATCH (s:Specifier)
+		WHERE s.key = k AND s.value = v
 
-		// Policies that have the required action and specifier
-		MATCH (policy)-[rel:$($action)]->(s:Specifier)<-[:CHILD_OF*0..]-(specifier)
+		MATCH (p:Policy)-[:$($action)]->(ps:Specifier)<-[:CHILD_OF*0..]-(s)
 
-		// Resources that apply to the policies
-		MATCH (policy)<-[:HAS_POLICY]-(:Resource)<-[:CHILD_OF*0..]-(resource:Resource)
+		MATCH (subject:Subject {name: $subject})-[:CHILD_OF*0..]->(parents:Subject)-[:HAS_POLICY]->(p)
 
-		// Resources under the specified parent resource
-		MATCH (parent)<-[:CHILD_OF*0..]-(resource:Resource)
+		WITH p, count(DISTINCT s.key) AS matches, size(keys(normalizedSpecifiers)) AS requiredMatches, normalizedSpecifiers
+		WHERE matches = requiredMatches
+
+		MATCH (resource:Resource)-[:CHILD_OF*0..]->(:Resource)-[:HAS_POLICY]->(p)
+		MATCH (resource)-[:CHILD_OF*0..]->(parent:Resource {name: $parent})
 
 		RETURN DISTINCT resource.name AS resource
 	`
+
 	params := map[string]any{
 		"subject":    qb.subject.Name,
 		"action":     string(qb.action),
@@ -95,7 +97,7 @@ func (qb WhatCanQueryBuilder) Query() ([]resource.Resource, error) {
 		"subject", qb.subject,
 		"action", qb.action,
 		"underResource", qb.underResource,
-		"specifier", "*=*",
+		"specifiers", qb.specifiers,
 		"resources", resources,
 		"duration", result.Summary.ResultAvailableAfter(),
 	)
