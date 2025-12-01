@@ -39,6 +39,7 @@ func TestCanQueries(t *testing.T) {
 		specifiers specifier.SpecifierGroup
 		expected   bool
 	}{
+		// TODO: Add tests for groups where all the children have permissions to some resource
 		{"direct: p1 READ r1", p1, action.ActionRead, r1, specifier.SpecifierGroup{}, true},
 		{"direct: p1 READ r3", p1, action.ActionRead, r3, specifier.SpecifierGroup{}, false},
 		{"direct: p1 READ r1 in prod", p1, action.ActionRead, r1, specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}}, true},
@@ -60,13 +61,13 @@ func TestCanQueries(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := query.Can(tc.subject).Perform(tc.action).On(tc.resource).With(tc.specifiers).Query()
-			if err != nil {
-				t.Errorf("Unexpected error for %s: %v", tc.name, err)
+			result := query.Can(tc.subject).Perform(tc.action).On(tc.resource).With(tc.specifiers).Query()
+			if result.Err != nil {
+				t.Errorf("Unexpected error for %s: %v", tc.name, result.Err)
 				return
 			}
-			if result != tc.expected {
-				t.Errorf("For %s, expected %v, but got %v", tc.name, tc.expected, result)
+			if result.Can != tc.expected {
+				t.Errorf("For %s, expected %v, but got %v", tc.name, tc.expected, result.Can)
 			}
 		})
 	}

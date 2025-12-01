@@ -46,12 +46,12 @@ var canCmd = &cobra.Command{
 		}
 		specifierGroup := specifier.SpecifierGroup{Specifiers: specifiers}
 
-		result, err := query.Can(subject.Subject{Name: subjectStr, Type: subjectType}).Perform(action).On(resource).With(specifierGroup).Query()
-		if err != nil {
+		can := query.Can(subject.Subject{Name: subjectStr, Type: subjectType}).Perform(action).On(resource).With(specifierGroup).Query()
+		if can.Err != nil {
 			return err
 		}
 
-		fmt.Println(result)
+		fmt.Println(can.Pretty())
 
 		return nil
 	},

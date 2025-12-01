@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/fatih/color"
 	"github.com/namsnath/otter/action"
 	"github.com/namsnath/otter/db"
 	"github.com/namsnath/otter/resource"
@@ -18,6 +19,15 @@ type CanQueryBuilder struct {
 	action     action.Action
 	resource   resource.Resource
 	specifiers map[string]string
+}
+
+type CanResult struct {
+	Err error
+	Can bool
+}
+
+func (result CanResult) Ok() bool {
+	return result.Err != nil
 }
 
 // `Can` initializes a new QueryBuilder and sets the Subject.
@@ -52,10 +62,13 @@ func (qb CanQueryBuilder) Validate() (CanQueryBuilder, error) {
 	return qb, nil
 }
 
-func (qb CanQueryBuilder) Query() (bool, error) {
-	qb, ok := qb.Validate()
-	if ok != nil {
-		return false, ok
+func (qb CanQueryBuilder) Query() CanResult {
+	qb, validationError := qb.Validate()
+	if validationError != nil {
+		return CanResult{
+			Err: validationError,
+			Can: false,
+		}
 	}
 
 	query := `
@@ -94,29 +107,41 @@ func (qb CanQueryBuilder) Query() (bool, error) {
 		"specifiers": qb.specifiers,
 	}
 
-	var canDoRaw interface{}
-
 	queryResult := db.ExecuteQuery(query, params)
-	if len(queryResult.Records) == 0 {
-		return false, nil
-	}
-
-	canDoRaw, hasVal := queryResult.Records[0].Get("CanDo")
-	if !hasVal {
-		return false, nil
-	}
-
-	canDo := canDoRaw.(bool)
-
 	slog.Info("Can",
 		"subject", qb.subject,
 		"action", qb.action,
 		"resource", qb.resource,
 		"specifiers", qb.specifiers,
-		"canDo", canDo,
 		"duration", queryResult.Summary.ResultAvailableAfter(),
 		"rows", len(queryResult.Records),
 	)
 
-	return canDo, nil
+	if len(queryResult.Records) == 0 {
+		return CanResult{
+			Err: nil,
+			Can: false,
+		}
+	}
+
+	canDo := queryResult.Records[0].AsMap()["CanDo"].(bool)
+
+	return CanResult{
+		Err: nil,
+		Can: canDo,
+	}
+}
+
+func (result CanResult) Pretty() string {
+	red := color.New(color.FgRed, color.Bold)
+	green := color.New(color.FgGreen, color.Bold)
+
+	if result.Ok() {
+		if result.Can {
+			return green.Sprint(result.Can)
+		}
+		return red.Sprint(result.Can)
+	}
+
+	return red.Sprint(result.Err.Error())
 }
