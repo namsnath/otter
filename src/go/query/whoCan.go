@@ -101,7 +101,9 @@ func (qb WhoCanQueryBuilder) Query() ([]subject.Subject, error) {
 		"resource", qb.resource,
 		"specifiers", qb.specifiers,
 		"subjects", subjects,
-		"duration", result.Summary.ResultAvailableAfter())
+		"duration", result.Summary.ResultAvailableAfter(),
+		"rows", len(result.Records),
+	)
 
 	return subjects, nil
 }

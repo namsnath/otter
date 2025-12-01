@@ -115,6 +115,7 @@ func (qb CanQueryBuilder) Query() (bool, error) {
 		"specifiers", qb.specifiers,
 		"canDo", canDo,
 		"duration", queryResult.Summary.ResultAvailableAfter(),
+		"rows", len(queryResult.Records),
 	)
 
 	return canDo, nil
