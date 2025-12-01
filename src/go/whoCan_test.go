@@ -41,23 +41,30 @@ func TestWhoCanQueries(t *testing.T) {
 	// query.WhoCan(action.ActionRead).On(rRoot).With(specifierGroup).Query()
 
 	testCases := []struct {
-		name       string
-		action     action.Action
-		resource   resource.Resource
-		specifiers []specifier.Specifier
-		expected   []subject.Subject
+		name        string
+		subjectType subject.SubjectType
+		action      action.Action
+		resource    resource.Resource
+		specifiers  []specifier.Specifier
+		expected    []subject.Subject
 	}{
-		{"READ r1", action.ActionRead, r1, []specifier.Specifier{}, []subject.Subject{g1, p1, p2}},
-		{"READ r2", action.ActionRead, r2, []specifier.Specifier{}, []subject.Subject{g1, g2, p1, p2}},
-		{"READ rRoot", action.ActionRead, rRoot, []specifier.Specifier{}, []subject.Subject{}},
-		{"READ rRoot as admin", action.ActionRead, rRoot, []specifier.Specifier{adminRole}, []subject.Subject{p3}},
-		{"READ r3 as admin", action.ActionRead, r3, []specifier.Specifier{adminRole}, []subject.Subject{p3}},
-		{"READ r3 as admin in prod", action.ActionRead, r3, []specifier.Specifier{adminRole, prodEnv}, []subject.Subject{p1, p2, p3}},
+		{"Principals READ r1", subject.SubjectTypePrincipal, action.ActionRead, r1, []specifier.Specifier{}, []subject.Subject{p1, p2}},
+		{"Groups READ r1", subject.SubjectTypeGroup, action.ActionRead, r1, []specifier.Specifier{}, []subject.Subject{g1}},
+		{"Principals READ r2", subject.SubjectTypePrincipal, action.ActionRead, r2, []specifier.Specifier{}, []subject.Subject{p1, p2}},
+		{"Groups READ r2", subject.SubjectTypeGroup, action.ActionRead, r2, []specifier.Specifier{}, []subject.Subject{g1, g2}},
+		{"Principals READ rRoot", subject.SubjectTypePrincipal, action.ActionRead, rRoot, []specifier.Specifier{}, []subject.Subject{}},
+		{"Groups READ rRoot", subject.SubjectTypeGroup, action.ActionRead, rRoot, []specifier.Specifier{}, []subject.Subject{}},
+		{"Principals READ rRoot as admin", subject.SubjectTypePrincipal, action.ActionRead, rRoot, []specifier.Specifier{adminRole}, []subject.Subject{p3}},
+		{"Groups READ rRoot as admin", subject.SubjectTypeGroup, action.ActionRead, rRoot, []specifier.Specifier{adminRole}, []subject.Subject{}},
+		{"Principals READ r3 as admin", subject.SubjectTypePrincipal, action.ActionRead, r3, []specifier.Specifier{adminRole}, []subject.Subject{p3}},
+		{"Groups READ r3 as admin", subject.SubjectTypeGroup, action.ActionRead, r3, []specifier.Specifier{adminRole}, []subject.Subject{}},
+		{"Principals READ r3 as admin in prod", subject.SubjectTypePrincipal, action.ActionRead, r3, []specifier.Specifier{adminRole, prodEnv}, []subject.Subject{p1, p2, p3}},
+		{"Groups READ r3 as admin in prod", subject.SubjectTypeGroup, action.ActionRead, r3, []specifier.Specifier{adminRole, prodEnv}, []subject.Subject{}},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := query.WhoCan(tc.action).On(tc.resource).With(specifier.SpecifierGroup{Specifiers: tc.specifiers}).Query()
+			result, err := query.WhoCan(tc.subjectType).Perform(tc.action).On(tc.resource).With(specifier.SpecifierGroup{Specifiers: tc.specifiers}).Query()
 			if err != nil {
 				t.Errorf("Unexpected error for %s: %v", tc.name, err)
 				return

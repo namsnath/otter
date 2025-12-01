@@ -17,13 +17,20 @@ type WhoCanQueryBuilder struct {
 	action     action.Action
 	resource   resource.Resource
 	specifiers map[string]string
+	ofType     subject.SubjectType
 }
 
-// `WhoCan` initializes a new QueryBuilder and sets the Subject.
-func WhoCan(a action.Action) WhoCanQueryBuilder {
+// `WhoCan` initializes a new QueryBuilder and sets the SubjectType.
+func WhoCan(st subject.SubjectType) WhoCanQueryBuilder {
 	return WhoCanQueryBuilder{
-		action: a,
+		ofType: st,
 	}
+}
+
+// Perform sets the Action on the QueryBuilder.
+func (qb WhoCanQueryBuilder) Perform(a action.Action) WhoCanQueryBuilder {
+	qb.action = a
+	return qb
 }
 
 // On sets the Resource on the QueryBuilder.
@@ -42,6 +49,10 @@ func (qb WhoCanQueryBuilder) Validate() (WhoCanQueryBuilder, error) {
 	if qb.action == "" || qb.resource == (resource.Resource{}) {
 		return WhoCanQueryBuilder{}, fmt.Errorf("incomplete WhoCan query: action and resource must be set")
 	}
+	if qb.ofType == "" {
+		return WhoCanQueryBuilder{}, fmt.Errorf("incomplete WhoCan query: subject type must be set")
+	}
+
 	return qb, nil
 }
 
@@ -71,7 +82,7 @@ func (qb WhoCanQueryBuilder) Query() ([]subject.Subject, error) {
 		WITH p, count(DISTINCT s.key) AS matches, size(keys(normalizedSpecifiers)) AS requiredMatches, normalizedSpecifiers
 		WHERE matches = requiredMatches
 
-		MATCH (subject:Subject)-[:CHILD_OF*0..]->(:Subject)-[:HAS_POLICY]->(p)
+		MATCH (subject:Subject {type: $ofType})-[:CHILD_OF*0..]->(:Subject)-[:HAS_POLICY]->(p)
 
 		RETURN DISTINCT subject.name AS subject, subject.type AS subjectType
 	`
@@ -80,6 +91,7 @@ func (qb WhoCanQueryBuilder) Query() ([]subject.Subject, error) {
 		"resource":   qb.resource.Name,
 		"action":     string(qb.action),
 		"specifiers": qb.specifiers,
+		"ofType":     string(qb.ofType),
 	}
 
 	result := db.ExecuteQuery(query, params)
