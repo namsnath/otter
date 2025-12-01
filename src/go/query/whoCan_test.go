@@ -1,4 +1,4 @@
-package main
+package query_test
 
 import (
 	"reflect"
