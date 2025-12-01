@@ -15,7 +15,7 @@ func DeleteEverything() {
 	result := db.ExecuteQuery(`MATCH (n) DETACH DELETE n`, nil)
 	slog.Info(
 		"All nodes and relationships deleted",
-		slog.Any("resultAvailableAfter", result.Summary.ResultAvailableAfter()),
+		slog.Any("duration", result.Summary.ResultAvailableAfter()),
 	)
 }
 
@@ -46,40 +46,49 @@ func SetupTestState() {
 	envProd, _ := specifier.NewSpecifier("Env", "prod").CreateAsChildOf(envRoot)
 	specifier.NewSpecifier("Env", "dev").CreateAsChildOf(envRoot)
 
-	policy.Policy{
-		Subject:    g1,
-		Resource:   r1,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{},
-	}.Create()
-	policy.Policy{
-		Subject:    p1,
-		Resource:   r3,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}},
-	}.Create()
-	policy.Policy{
-		Subject:    p2,
-		Resource:   r3,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin, envProd}},
-	}.Create()
-	policy.Policy{
-		Subject:    g2,
-		Resource:   r2,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{},
-	}.Create()
-	policy.Policy{
-		Subject:    p2,
-		Resource:   r1,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{},
-	}.Create()
-	policy.Policy{
-		Subject:    p3,
-		Resource:   rRoot,
-		Action:     action.ActionRead,
-		Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin}},
-	}.Create()
+	policies := []policy.Policy{
+		{
+			Subject:    g1,
+			Resource:   r1,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{},
+		},
+		{
+			Subject:    p1,
+			Resource:   r3,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{envProd}},
+		},
+		{
+			Subject:    p2,
+			Resource:   r3,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin, envProd}},
+		},
+		{
+			Subject:    g2,
+			Resource:   r2,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{},
+		},
+		{
+			Subject:    p2,
+			Resource:   r1,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{},
+		},
+		{
+			Subject:    p3,
+			Resource:   rRoot,
+			Action:     action.ActionRead,
+			Specifiers: specifier.SpecifierGroup{Specifiers: []specifier.Specifier{roleAdmin}},
+		},
+	}
+
+	for _, p := range policies {
+		_, err := p.Create()
+		if err != nil {
+			slog.Error("Error creating policy", "error", err)
+		}
+	}
 }
