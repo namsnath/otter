@@ -34,7 +34,11 @@ func (qb WhatCanQueryBuilder) Perform(action action.Action) WhatCanQueryBuilder 
 }
 
 func (qb WhatCanQueryBuilder) Under(parentResource resource.Resource) WhatCanQueryBuilder {
-	qb.parentResource = parentResource
+	if parentResource == (resource.Resource{}) {
+		qb.parentResource = resource.NewResource("_")
+	} else {
+		qb.parentResource = parentResource
+	}
 	return qb
 }
 
