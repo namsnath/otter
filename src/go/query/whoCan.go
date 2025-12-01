@@ -102,7 +102,11 @@ func (qb WhoCanQueryBuilder) Query() ([]subject.Subject, error) {
 		typeVal, typeOk := record.Get("subjectType")
 		if nameOk && typeOk {
 			if nameStr, nameIsStr := nameVal.(string); nameIsStr {
-				subject := subject.Subject{Name: nameStr, Type: subject.SubjectTypeFromString(typeVal.(string))}
+				subjectType, err := subject.SubjectTypeFromString(typeVal.(string))
+				if err != nil {
+					return nil, err
+				}
+				subject := subject.Subject{Name: nameStr, Type: subjectType}
 				subjects = append(subjects, subject)
 			}
 		}

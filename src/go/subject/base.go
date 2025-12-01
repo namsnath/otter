@@ -9,14 +9,16 @@ const (
 	SubjectTypeGroup     SubjectType = "Group"
 )
 
-func SubjectTypeFromString(s string) SubjectType {
+var ErrInvalidSubjectType = fmt.Errorf("invalid SubjectType")
+
+func SubjectTypeFromString(s string) (SubjectType, error) {
 	switch s {
 	case "Principal":
-		return SubjectTypePrincipal
+		return SubjectTypePrincipal, nil
 	case "Group":
-		return SubjectTypeGroup
+		return SubjectTypeGroup, nil
 	default:
-		panic(fmt.Sprintf("Invalid SubjectType %v", s))
+		return "", ErrInvalidSubjectType
 	}
 }
 
