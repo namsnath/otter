@@ -8,6 +8,7 @@ import (
 )
 
 type Policy struct {
+	Id         string
 	Subject    subject.Subject
 	Resource   resource.Resource
 	Action     action.Action

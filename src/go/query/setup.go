@@ -19,12 +19,16 @@ func DeleteEverything() {
 	)
 }
 
-func SetupTestState() {
+func SetupIndexes() {
 	db.ExecuteQuery(`CREATE INDEX subject_name_index IF NOT EXISTS FOR (s:Subject) ON (s.name)`, nil)
 	db.ExecuteQuery(`CREATE INDEX subject_name_type_index IF NOT EXISTS FOR (s:Subject) ON (s.name, s.type)`, nil)
 	db.ExecuteQuery(`CREATE INDEX resource_name_index IF NOT EXISTS FOR (r:Resource) ON (r.name)`, nil)
 	db.ExecuteQuery(`CREATE INDEX specifier_key_value_index IF NOT EXISTS FOR (s:Specifier) ON (s.key, s.value)`, nil)
 	db.ExecuteQuery(`CREATE INDEX policy_id_index IF NOT EXISTS FOR (p:Policy) ON (p.id)`, nil)
+}
+
+func SetupTestState() {
+	SetupIndexes()
 
 	g2 := subject.Subject{Name: "Group2", Type: subject.SubjectTypeGroup}.Create()
 	g1 := subject.Subject{Name: "Group1", Type: subject.SubjectTypeGroup}.CreateAsChildOf(g2)
