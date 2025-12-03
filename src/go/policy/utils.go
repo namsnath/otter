@@ -1,12 +1,16 @@
 package policy
 
 import (
+	"errors"
+
 	"github.com/namsnath/otter/action"
 	"github.com/namsnath/otter/resource"
 	"github.com/namsnath/otter/specifier"
 	"github.com/namsnath/otter/subject"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
+
+var ErrPolicyIDRequired = errors.New("policy ID is required")
 
 func ProcessPolicyRecord(record *neo4j.Record) (Policy, error) {
 	policy := Policy{}

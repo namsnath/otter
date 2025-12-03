@@ -40,6 +40,8 @@ func (policy Policy) Create() (Policy, error) {
 
 	policyId := result.Records[0].AsMap()["PolicyId"].(string)
 
-	policy.Id = policyId
-	return policy, nil
+	newPolicy := policy
+	newPolicy.Id = policyId
+
+	return newPolicy, nil
 }
