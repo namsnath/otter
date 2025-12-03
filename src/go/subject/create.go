@@ -16,6 +16,11 @@ func (subject Subject) Create() Subject {
 }
 
 func (subject Subject) CreateAsChildOf(parent Subject) Subject {
+	// TODO: Make these functions return an error instead of panicking
+	if parent.Type != SubjectTypeGroup {
+		panic("can only create child subjects under Group type subjects")
+	}
+
 	db.ExecuteQuery(`
 		CREATE (s:Subject {name: $name, type: $type})
 		WITH s
