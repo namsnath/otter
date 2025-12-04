@@ -125,8 +125,7 @@ List of subjects.
 Fetch subjects given everything else.
 
 ### HowCan
-TODO
+`HowCan <Subject> perform <Action> on <Resource> [with <Specifiers>]?`\
+Fetch specifiers given everything else. Optionally provide specifiers to reduce output space.
 
-`HowCan <Subject> perform <Action> on <Resource>?`\
-Fetch specifiers given everything else.\
-This will be a heavy query since it will return a cross product of all applicable specifiers.
+This is a heavy query since it returns a cartesian product of all applicable specifiers.
