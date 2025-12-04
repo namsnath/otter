@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/namsnath/otter/action"
+	"github.com/namsnath/otter/db"
 	"github.com/namsnath/otter/policy"
 	"github.com/namsnath/otter/query"
 	"github.com/namsnath/otter/resource"
@@ -15,6 +16,12 @@ import (
 )
 
 func TestPolicyGetQueries(t *testing.T) {
+	ctx, container := db.TestContainer()
+	// Ensure the container is terminated after the test finishes
+	defer func() {
+		container.Terminate(ctx)
+	}()
+
 	query.DeleteEverything()
 	query.SetupIndexes()
 

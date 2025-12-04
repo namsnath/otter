@@ -22,6 +22,12 @@ func deletePolicies() {
 }
 
 func TestHowCanQuery(t *testing.T) {
+	ctx, container := db.TestContainer()
+	// Ensure the container is terminated after the test finishes
+	defer func() {
+		container.Terminate(ctx)
+	}()
+
 	query.DeleteEverything()
 	query.SetupIndexes()
 
